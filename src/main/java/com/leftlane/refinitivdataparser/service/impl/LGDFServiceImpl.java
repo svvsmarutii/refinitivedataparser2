@@ -71,10 +71,13 @@ public class LGDFServiceImpl implements LGDFService {
 
         BufferedReader br = null;
         ChannelSftp channelSftp = null;
+        Session jschSession = null;
         String line = "";
         int i = 1;
         try {
-            channelSftp = setupJsch();
+            jschSession = setupJsch();
+            jschSession.connect();
+            channelSftp = (ChannelSftp) jschSession.openChannel(sshChannel);;
             channelSftp.connect();
             channelSftp.cd(csvLoc);
             Vector<ChannelSftp.LsEntry> list = (Vector<ChannelSftp.LsEntry>) channelSftp.ls("*.csv");
@@ -100,17 +103,21 @@ public class LGDFServiceImpl implements LGDFService {
                     e.printStackTrace();
                 }
             }
-            channelSftp.exit();
+            if(channelSftp != null && !channelSftp.isClosed()){
+                channelSftp.quit();
+            }
+            if(jschSession != null && jschSession.isConnected()){
+                jschSession.disconnect();
+            }
         }
     }
 
-    private ChannelSftp setupJsch() throws JSchException {
+    private Session setupJsch() throws JSchException {
         JSch.setConfig("StrictHostKeyChecking", "no");
         JSch jsch = new JSch();
         jsch.addIdentity(sshPemLoc);
-        Session jschSession = jsch.getSession(sshUsername,sshHost );
+        return jsch.getSession(sshUsername,sshHost );
       //  jschSession.setPassword(sshPwd);
-        jschSession.connect();
-        return (ChannelSftp) jschSession.openChannel(sshChannel);
+
     }
 }
