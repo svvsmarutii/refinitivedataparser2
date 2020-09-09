@@ -13,8 +13,8 @@ import java.util.Date;
 @Getter
 @Setter
 @Entity
-@Table(name = "CROSS_REFERENCE_CODES", schema = "reference_data")
-@Subselect("select * from reference_data.CROSS_REFERENCE_CODES")
+@Table(name = "CROSS_REFERENCE_CODES", schema = "")
+@Subselect("select * from  reference_data.CROSS_REFERENCE_CODES")
 public class CrossRefCodes {
     @Id
     @Column(name = "CROSS_REF_TYPE_ID")

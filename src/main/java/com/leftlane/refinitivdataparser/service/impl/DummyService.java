@@ -34,8 +34,8 @@ public class DummyService {
         System.out.println("PROCESS 2 DONE IN :  " + (System.currentTimeMillis() - curr));
     }
 
-        public void initiateShutdown(int returnCode){
-            System.out.println("Request received to shut down spring boot application");
-            SpringApplication.exit(appContext, () -> returnCode);
-        }
+    public void initiateShutdown(int returnCode) {
+        System.out.println("Request received to shut down spring boot application");
+        SpringApplication.exit(appContext, () -> returnCode);
+    }
 }

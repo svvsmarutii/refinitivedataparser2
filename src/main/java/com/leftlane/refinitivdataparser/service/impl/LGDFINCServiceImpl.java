@@ -19,21 +19,21 @@ public class LGDFINCServiceImpl implements LGDFINCService {
 
     @Autowired
     DummyService dummyService;
+
     @Async
     @Override
     public void process() {
         try {
             System.out.println("Attempting to read data from DB");
-            List<CrossRefCodes> crossRefCodes =  crcRepository.findByStatus(Boolean.TRUE);
+            List<CrossRefCodes> crossRefCodes = crcRepository.findByStatus(Boolean.TRUE);
             System.out.println("number of records fetched : " + crossRefCodes.size());
 
             dummyService.longRunning2();
 
 
-
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             dummyService.initiateShutdown(0);
         }
     }

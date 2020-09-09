@@ -1,5 +1,6 @@
 package com.leftlane.refinitivdataparser.service.impl;
 
+import com.jcraft.jsch.*;
 import com.leftlane.refinitivdataparser.repository.CRCRepository;
 import com.leftlane.refinitivdataparser.repository.entities.CrossRefCodes;
 import com.leftlane.refinitivdataparser.service.LGDFService;
@@ -9,10 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
+import java.util.Vector;
 
 
 @Slf4j
@@ -21,12 +21,31 @@ public class LGDFServiceImpl implements LGDFService {
 
     @Autowired
     CRCRepository crcRepository;
-
+    @Autowired
+    DummyService dummyService;
     @Value("${file.path}")
     private String filePath;
 
-    @Autowired
-    DummyService dummyService;
+    @Value("${ssh.username}")
+    private String sshUsername;
+
+    @Value("${ssh.host}")
+    private String sshHost;
+
+    @Value("${ssh.pemfile.location}")
+    private String sshPemLoc;
+
+    @Value("${ssh.password}")
+    private String sshPwd;
+
+    @Value("${ssh.channel}")
+    private String sshChannel;
+
+
+    @Value("${ssh.csv.location}")
+    private String csvLoc;
+
+
 
     @Async
     @Override
@@ -40,8 +59,8 @@ public class LGDFServiceImpl implements LGDFService {
             System.out.println("Attempting to read data from file");
             readFile(filePath);
 
-            dummyService.longRunning();
-        } catch (InterruptedException e) {
+        //    dummyService.longRunning();
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             dummyService.initiateShutdown(0);
@@ -49,18 +68,29 @@ public class LGDFServiceImpl implements LGDFService {
     }
 
     private void readFile(String filePath) {
+
         BufferedReader br = null;
+        ChannelSftp channelSftp = null;
         String line = "";
         int i = 1;
         try {
-            br = new BufferedReader(new FileReader(filePath));
-            System.out.println("try to read first 4 lines in the file ");
-            while ((line = br.readLine()) != null) {
-                System.out.println("line " + i + " : " + line);
-                i++;
-                if (i == 5) break;
+            channelSftp = setupJsch();
+            channelSftp.connect();
+            channelSftp.cd(csvLoc);
+            Vector<ChannelSftp.LsEntry> list = (Vector<ChannelSftp.LsEntry>) channelSftp.ls("*.csv");
+            for(ChannelSftp.LsEntry entry : list) {
+            InputStream is =  channelSftp.get(csvLoc +"/"+ entry.getFilename());
+                br = new BufferedReader(new InputStreamReader(is));
+                System.out.println("try to read first 4 lines in the file ");
+                while ((line = br.readLine()) != null) {
+                    System.out.println("line " + i + " : " + line);
+                    i++;
+                    if (i == 5) break;
+                }
             }
-        } catch (IOException e) {
+
+
+        } catch (IOException | JSchException | SftpException e) {
             e.printStackTrace();
         } finally {
             if (br != null) {
@@ -70,6 +100,17 @@ public class LGDFServiceImpl implements LGDFService {
                     e.printStackTrace();
                 }
             }
+            channelSftp.exit();
         }
+    }
+
+    private ChannelSftp setupJsch() throws JSchException {
+        JSch.setConfig("StrictHostKeyChecking", "no");
+        JSch jsch = new JSch();
+        jsch.addIdentity(sshPemLoc);
+        Session jschSession = jsch.getSession(sshUsername,sshHost );
+      //  jschSession.setPassword(sshPwd);
+        jschSession.connect();
+        return (ChannelSftp) jschSession.openChannel(sshChannel);
     }
 }
