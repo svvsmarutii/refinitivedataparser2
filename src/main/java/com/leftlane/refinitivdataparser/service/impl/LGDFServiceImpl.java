@@ -59,7 +59,7 @@ public class LGDFServiceImpl implements LGDFService {
             System.out.println("Attempting to read data from file");
             readFile(filePath);
 
-        //    dummyService.longRunning();
+            dummyService.longRunning();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
